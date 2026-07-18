@@ -52,8 +52,8 @@ def get_dict(file_name):
     etof = {}  # the english to french dictionary to be returned
     for i in range(len(my_file)):
         # indexing into the rows.
-        en = my_file.loc[i][0]
-        fr = my_file.loc[i][1]
+        en = my_file.iloc[i, 0]
+        fr = my_file.iloc[i, 1]
         etof[en] = fr
 
     return etof
