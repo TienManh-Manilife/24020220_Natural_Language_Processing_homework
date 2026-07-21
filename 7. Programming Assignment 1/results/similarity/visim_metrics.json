@@ -1,0 +1,14 @@
+{
+  "valid_pairs": 344,
+  "pearson_sim1": 0.4468477976887179,
+  "pearson_sim1_pvalue": 2.743277262309516e-18,
+  "spearman_sim1": 0.4077568887734169,
+  "spearman_sim1_pvalue": 3.2645624595200865e-15,
+  "pearson_sim2": 0.44681975413851915,
+  "pearson_sim2_pvalue": 2.7581742683963206e-18,
+  "spearman_sim2": 0.4077568887734169,
+  "spearman_sim2_pvalue": 3.2645624595200865e-15,
+  "total_pairs": 400,
+  "oov_pairs": 56,
+  "coverage": 0.86
+}
