@@ -38,12 +38,12 @@ if __name__ == "__main__":
         # Bài 1: Cosine similarity-------------------------------------------------------------------------------------
         run_similarity_experiment(embeddings, visim_path, results_similarity_dir)
 
-        # Bài 2: K-nearest words---------------------------------------------------------------------------------------
-        run_nearest_word_search(embeddings, query_words, k, results_nearest_dir)
+        # # Bài 2: K-nearest words---------------------------------------------------------------------------------------
+        # run_nearest_word_search(embeddings, query_words, k, results_nearest_dir)
 
-        # Bài 3: Synonym-antonym classification------------------------------------------------------------------------
-        run_classification_experiment(embeddings, synonym_path, antonym_path, vicon_paths, 
-                                      results_classification_dir, model_name, validation_size, random_state)
+        # # Bài 3: Synonym-antonym classification------------------------------------------------------------------------
+        # run_classification_experiment(embeddings, synonym_path, antonym_path, vicon_paths, 
+        #                               results_classification_dir, model_name, validation_size, random_state)
 
         print("Hoàn thành chạy chương trình. Kết quả được lưu trong thư mục 'results'")
     except Exception as error:

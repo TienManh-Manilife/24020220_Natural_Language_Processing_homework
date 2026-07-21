@@ -13,29 +13,16 @@ Tải thư viện cần thiết: pip install -r requirements.txt
 **Cấu trúc thư mục:** [Tree](./tree.txt)
 
 ## Chạy chương trình: Cần cd đến thư mục của folder này. Sau đó:  
-**Phần 1 của bài tập:**   
+**Bài 1 - Similarity:** Chạy file similarity.py
+
+    Đọc embeddings → Đọc ViSim → Tính cosine → Lưu kết quả vào results/similarity/
 
 
-**Chạy Phần 2 của bài tập:**   
-    python .\main.py nearest `
-  --embeddings ".\data\Word2vec\word2vec.txt" `
-  --word "sinh_viên" `
-  --word "thông_minh" `
-  --word "vui_vẻ" `
-  --word "học" `
-  --word "thành_phố" `
-  --k 10 `
-  --results-dir ".\results\nearest"
+**Bài 2 - K-nearest words:** Chạy hàm run_nearest_word_search trong main.py  
+
+    Nhận từ (gọi là w) → lấy vector của w → tính cosine với các từ còn lại → sắp xếp giảm dần → lấy k từ đầu tiên
 
 **Chạy Phần 3 của bài tập:**   
-    python .\main.py classify `
-   --embeddings ".\data\Word2vec\word2vec.txt" `
-   --synonyms ".\data\antonym-synonym-set\Synonym_vietnamese.txt" `
-   --antonyms ".\data\antonym-synonym-set\Antonym_vietnamese.txt" `
-   --vicon-noun ".\data\ViCon-400\400_noun_pairs.txt" `
-   --vicon-verb ".\data\ViCon-400\400_verb_pairs.txt" `
-   --vicon-adj ".\data\ViCon-400\600_adj_pairs.txt" `
-   --model logreg `
-   --results-dir ".\results\classification"
+
 
 **Kết quả từng phần:** [Kết quả](./results/)
