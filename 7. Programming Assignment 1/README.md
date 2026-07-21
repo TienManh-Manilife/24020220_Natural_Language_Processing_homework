@@ -8,10 +8,10 @@
 **Cấu trúc thư mục:** [Tree](./tree.txt)
 
 **Chạy Phần 1 của bài tập:**   
-    python .\main.py similarity `  
-  --embeddings ".\data\Word2vec\word2vec.txt" `  
-  --visim ".\data\ViSim-400\Visim-400.txt" `  
-  --results-dir ".\results\similarity"  
+    python .\main.py similarity `
+  --embeddings ".\data\Word2vec\word2vec.txt" `
+  --visim ".\data\ViSim-400\Visim-400.txt" `
+  --results-dir ".\results\similarity"
 
 **Chạy Phần 2 của bài tập:**   
     python .\main.py nearest `
