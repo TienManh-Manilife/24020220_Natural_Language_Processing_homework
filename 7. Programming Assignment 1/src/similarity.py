@@ -7,6 +7,7 @@ import pandas as pd
 from scipy.stats import pearsonr, spearmanr
 
 from .utils import ensure_directory, normalize_word, save_json
+from .embeddings import load_embeddings
 
 
 def cosine_similarity(vector1: np.ndarray, vector2: np.ndarray) -> float:

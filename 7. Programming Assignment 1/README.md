@@ -13,11 +13,8 @@ Tải thư viện cần thiết: pip install -r requirements.txt
 **Cấu trúc thư mục:** [Tree](./tree.txt)
 
 ## Chạy chương trình: Cần cd đến thư mục của folder này. Sau đó:  
-**Chạy Phần 1 của bài tập:**   
-    python .\main.py similarity `
-  --embeddings ".\data\Word2vec\word2vec.txt" `
-  --visim ".\data\ViSim-400\Visim-400.txt" `
-  --results-dir ".\results\similarity"
+**Phần 1 của bài tập:**   
+
 
 **Chạy Phần 2 của bài tập:**   
     python .\main.py nearest `
