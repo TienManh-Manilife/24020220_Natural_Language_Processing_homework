@@ -1,0 +1,6 @@
+Accuracy: 0.7852
+Macro Precision: 0.7834
+Macro Recall: 0.7837
+Macro F1: 0.7836
+Training samples: 7290
+Testing samples: 1173

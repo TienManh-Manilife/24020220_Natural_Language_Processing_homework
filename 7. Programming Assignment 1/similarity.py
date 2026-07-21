@@ -37,7 +37,7 @@ def evaluate_word_pairs(dataframe: pd.DataFrame, embeddings: dict[str, np.ndarra
             continue
 
         results.append({"Word1": word1, "Word2": word2, "POS": str(row.POS), "Sim1": float(row.Sim1), "Sim2": float(row.Sim2), 
-                    "Cosine": cosine_similarity(embeddings[word1], embeddings[word2])})
+                        "STD": float(row.STD), "Cosine": cosine_similarity(embeddings[word1], embeddings[word2])})
 
     return pd.DataFrame(results), pd.DataFrame(oov_rows)
 
@@ -53,8 +53,15 @@ def run_similarity_experiment(embeddings: dict[str, np.ndarray], visim_path: str
 
 
 # Chạy chương trình
-word2vec_path = "./data/Word2vec/word2vec.txt"
-embeddings = load_embeddings(word2vec_path)
-visim_path = "./data/ViSim-400/Visim-400.txt"
-results_similarity_dir = "./results/similarity"
-run_similarity_experiment(embeddings, visim_path, results_similarity_dir)
+if __name__ == "__main__":
+    word2vec_path = "./data/Word2vec/word2vec.txt"
+    embeddings = load_embeddings(word2vec_path)
+
+    visim_path = "./data/ViSim-400/ViSim-400.txt"
+    results_similarity_dir = "./results/similarity"
+
+    run_similarity_experiment(
+        embeddings,
+        visim_path,
+        results_similarity_dir,
+    )

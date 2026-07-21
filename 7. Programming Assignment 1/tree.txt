@@ -13,32 +13,12 @@ Programming Assignment 1:  WORD SIMILARITY AND SYNONYM-ANTONYM CLASSIFICATION/
 │       └── Synonym_vietnamese.txt  
 ├── results/  
 │   ├── classification/ 
-│   │   ├── classification_summary.json
-│   │   ├── test_classification_report.txt
-│   │   ├── test_confusion_matrix.png 
-│   │   ├── test_metrics_by_pos.json
-│   │   ├── test_metrics.json
-│   │   ├── training_oov.csv
-│   │   ├── validation_classification_report.txt
-│   │   ├── validation_confusion_matrix.png
-│   │   ├── validation_metrics.json
-│   │   ├── vicon_oov.csv
-│   │   └── Synonym_vietnamese.txt  
-│   ├── nearest/  
-│   │   └── nearest_words.csv
 │   └── similarity/ 
-│   │   ├── visim_metrics.json
-│   │   ├── visim_oov.csv
-│   │   └── visim_predictions.csv
-├── src/  
-│   ├── embeddings.py  
-│   ├── similarity.py  
-│   ├── nearest_words.py  
-│   ├── classifier.py  
-│   └── utils.py  
 ├── topic/  
 │   └── Programming Assignment 1-2026.pdf  
-├── main.py  
+├──  similarity.py  
+├──  nearest_words.py  
+├──  classifier.py  
+├──  utils.py  
 ├── requirements.txt  
-└── README.md  
-
+└── README.md 

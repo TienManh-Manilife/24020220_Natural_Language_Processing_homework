@@ -1,7 +1,7 @@
 import numpy as np
 
-from similarity import cosine_similarity, embeddings
-from utils import normalize_word
+from similarity import cosine_similarity
+from utils import normalize_word, load_embeddings
 
 
 def nearest_words(word: str, k: int, embeddings: dict[str, np.ndarray]):
@@ -35,6 +35,11 @@ def nearest_words(word: str, k: int, embeddings: dict[str, np.ndarray]):
 
 
 # Chạy chương trình
-neighbors = nearest_words(word="nện", k=5, embeddings=embeddings)
-for neighbor, score in neighbors:
-    print(neighbor, score)
+if __name__ == "__main__":
+    word2vec_path = "./data/Word2vec/word2vec.txt"
+    embeddings = load_embeddings(word2vec_path)
+
+    neighbors = nearest_words("nện", 5, embeddings)
+
+    for neighbor, score in neighbors:
+        print(neighbor, score)

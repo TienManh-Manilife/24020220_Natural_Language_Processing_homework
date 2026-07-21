@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import Counter
 from pathlib import Path
 from typing import Iterable
 
@@ -16,89 +15,110 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
 )
-from sklearn.model_selection import train_test_split
-from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from .similarity import cosine_similarity
-from .utils import ensure_directory, normalize_word, save_json, unordered_pair_key
+from similarity import cosine_similarity
+from utils import load_embeddings, normalize_word
+
 
 LABELS = ["ANT", "SYN"]
 
 
-def load_labeled_pair_file(
-    file_path: str | Path,
-    label: str,
-) -> list[tuple[str, str, str]]:
-    """Read a synonym/antonym file whose label is determined by the file."""
+# Đọc file chứa các cặp đồng nghĩa hoặc trái nghĩa dùng để huấn luyện
+def load_labeled_pair_file(file_path: str | Path, label: str):
     path = Path(file_path)
+
     if not path.exists():
-        raise FileNotFoundError(f"Training pair file not found: {path}")
+        raise FileNotFoundError(f"Không tìm thấy file huấn luyện: {path}")
 
     label = label.strip().upper()
+
     if label not in LABELS:
-        raise ValueError(f"Unsupported label: {label}")
+        raise ValueError(f"Nhãn không hợp lệ: {label}")
 
     samples: list[tuple[str, str, str]] = []
+
     with path.open("r", encoding="utf-8", errors="replace") as file:
         for line_number, raw_line in enumerate(file, start=1):
             parts = raw_line.strip().split()
+
             if len(parts) < 2:
                 continue
+
             word1 = normalize_word(parts[0])
             word2 = normalize_word(parts[1])
-            if (
-                line_number == 1
-                and word1.lower() in {"word1", "w1"}
-                and word2.lower() in {"word2", "w2"}
-            ):
+
+            # Bỏ qua dòng tiêu đề nếu có
+            if line_number == 1 and word1.lower() in {"word1", "w1"} and word2.lower() in {"word2", "w2"}:
                 continue
+
             samples.append((word1, word2, label))
 
     if not samples:
-        raise ValueError(f"No pairs were loaded from {path}.")
+        raise ValueError(f"Không đọc được cặp từ nào từ file: {path}")
+
     return samples
 
 
-def deduplicate_samples(
-    samples: Iterable[tuple[str, str, str]],
-) -> list[tuple[str, str, str]]:
-    """Remove duplicate/reversed pairs and discard conflicting labels."""
+# Tạo khóa không phụ thuộc thứ tự của cặp từ
+def create_pair_key(word1: str, word2: str):
+    return tuple(sorted((word1, word2)))
+
+
+# Loại các cặp trùng nhau, cặp đảo và cặp có nhãn mâu thuẫn
+def remove_duplicate_samples(samples: Iterable[tuple[str, str, str]]):
     labels_by_pair: dict[tuple[str, str], set[str]] = {}
-    examples: dict[tuple[str, str], tuple[str, str, str]] = {}
+    sample_by_pair: dict[tuple[str, str], tuple[str, str, str]] = {}
 
     for word1, word2, label in samples:
-        key = unordered_pair_key(word1, word2)
-        labels_by_pair.setdefault(key, set()).add(label)
-        examples[key] = (word1, word2, label)
+        key = create_pair_key(word1, word2)
 
-    return [
-        examples[key]
-        for key, labels in labels_by_pair.items()
-        if len(labels) == 1
-    ]
+        if key not in labels_by_pair:
+            labels_by_pair[key] = set()
+
+        labels_by_pair[key].add(label)
+        sample_by_pair[key] = (word1, word2, label)
+
+    cleaned_samples: list[tuple[str, str, str]] = []
+
+    for key, labels in labels_by_pair.items():
+        # Chỉ giữ cặp có đúng một nhãn
+        if len(labels) == 1:
+            cleaned_samples.append(sample_by_pair[key])
+
+    return cleaned_samples
 
 
-def create_pair_features(vector1: np.ndarray, vector2: np.ndarray) -> np.ndarray:
-    """Return |v1-v2|, v1*v2 and cosine as symmetric pair features."""
+# Tạo đặc trưng cho một cặp vector từ
+def create_pair_features(vector1: np.ndarray, vector2: np.ndarray):
+    difference = np.abs(vector1 - vector2)
+    product = vector1 * vector2
+    cosine = np.asarray([cosine_similarity(vector1, vector2)], dtype=np.float32)
+
     return np.concatenate([
-        np.abs(vector1 - vector2),
-        vector1 * vector2,
-        np.asarray([cosine_similarity(vector1, vector2)], dtype=np.float32),
+        difference,
+        product,
+        cosine,
     ]).astype(np.float32)
 
 
-def vectorize_samples(
-    samples: Iterable[tuple[str, str, str]],
-    embeddings: dict[str, np.ndarray],
-) -> tuple[np.ndarray, np.ndarray, pd.DataFrame]:
+# Chuyển dữ liệu huấn luyện thành ma trận đặc trưng
+def vectorize_training_samples(samples: Iterable[tuple[str, str, str]], embeddings: dict[str, np.ndarray]):
     features: list[np.ndarray] = []
     labels: list[str] = []
+    valid_rows: list[dict[str, str]] = []
     oov_rows: list[dict[str, str]] = []
 
     for word1, word2, label in samples:
-        missing = [word for word in (word1, word2) if word not in embeddings]
+        missing = []
+
+        if word1 not in embeddings:
+            missing.append(word1)
+
+        if word2 not in embeddings:
+            missing.append(word2)
+
         if missing:
             oov_rows.append({
                 "Word1": word1,
@@ -107,63 +127,92 @@ def vectorize_samples(
                 "Missing": ",".join(missing),
             })
             continue
-        features.append(create_pair_features(embeddings[word1], embeddings[word2]))
+
+        pair_features = create_pair_features(
+            embeddings[word1],
+            embeddings[word2],
+        )
+
+        features.append(pair_features)
         labels.append(label)
 
+        valid_rows.append({
+            "Word1": word1,
+            "Word2": word2,
+            "Relation": label,
+        })
+
     if not features:
-        raise ValueError("No training samples could be vectorized.")
-    return np.vstack(features), np.asarray(labels), pd.DataFrame(oov_rows)
+        raise ValueError("Không có cặp từ huấn luyện hợp lệ.")
+
+    return (
+        np.vstack(features),
+        np.asarray(labels),
+        pd.DataFrame(valid_rows),
+        pd.DataFrame(oov_rows),
+    )
 
 
-def _standardize_vicon_columns(dataframe: pd.DataFrame) -> pd.DataFrame:
-    lookup = {str(column).strip().lower(): column for column in dataframe.columns}
-    rename_map: dict[object, str] = {}
-    for target, candidates in {
-        "Word1": ["word1", "w1"],
-        "Word2": ["word2", "w2"],
-        "Relation": ["relation", "label", "class"],
-    }.items():
-        for candidate in candidates:
-            if candidate in lookup:
-                rename_map[lookup[candidate]] = target
-                break
-
-    dataframe = dataframe.rename(columns=rename_map)
-    required = {"Word1", "Word2", "Relation"}
-    missing = required.difference(dataframe.columns)
-    if missing:
-        raise ValueError(f"ViCon file is missing columns: {sorted(missing)}")
-    return dataframe
-
-
-def load_vicon_file(file_path: str | Path, pos_group: str) -> pd.DataFrame:
-    """Load a tab- or whitespace-separated ViCon file."""
+# Đọc một file ViCon-400
+def load_vicon_file(file_path: str | Path, pos_group: str):
     path = Path(file_path)
+
     if not path.exists():
-        raise FileNotFoundError(f"ViCon file not found: {path}")
+        raise FileNotFoundError(f"Không tìm thấy file ViCon: {path}")
 
-    last_error: Exception | None = None
-    for options in ({"sep": "\t"}, {"sep": r"\s+", "engine": "python"}):
-        try:
-            dataframe = _standardize_vicon_columns(pd.read_csv(path, **options))
-            dataframe["Word1"] = dataframe["Word1"].map(lambda x: normalize_word(str(x)))
-            dataframe["Word2"] = dataframe["Word2"].map(lambda x: normalize_word(str(x)))
-            dataframe["Relation"] = dataframe["Relation"].map(lambda x: str(x).strip().upper())
-            dataframe["POS_GROUP"] = pos_group.upper()
-            return dataframe
-        except Exception as error:
-            last_error = error
-    raise ValueError(f"Could not parse ViCon file: {last_error}")
+    rows: list[dict[str, str]] = []
+
+    with path.open("r", encoding="utf-8", errors="replace") as file:
+        for line_number, raw_line in enumerate(file, start=1):
+            parts = raw_line.strip().split()
+
+            if len(parts) < 3:
+                continue
+
+            word1 = normalize_word(parts[0])
+            word2 = normalize_word(parts[1])
+            relation = parts[2].strip().upper()
+
+            # Bỏ qua dòng tiêu đề
+            if line_number == 1 and word1.lower() in {"word1", "w1"} and word2.lower() in {"word2", "w2"}:
+                continue
+
+            if relation not in LABELS:
+                continue
+
+            rows.append({
+                "Word1": word1,
+                "Word2": word2,
+                "Relation": relation,
+                "POS_GROUP": pos_group.upper(),
+            })
+
+    if not rows:
+        raise ValueError(f"Không đọc được dữ liệu ViCon từ file: {path}")
+
+    return pd.DataFrame(rows)
 
 
-def vectorize_vicon(
-    dataframe: pd.DataFrame,
-    embeddings: dict[str, np.ndarray],
-) -> tuple[np.ndarray, np.ndarray, pd.DataFrame, pd.DataFrame]:
+# Đọc toàn bộ các file ViCon-400
+def load_vicon_dataset(vicon_paths: dict[str, str | Path]):
+    dataframes: list[pd.DataFrame] = []
+
+    for pos_group, file_path in vicon_paths.items():
+        dataframe = load_vicon_file(file_path, pos_group)
+        dataframes.append(dataframe)
+
+    if not dataframes:
+        raise ValueError("Không có file ViCon nào được cung cấp.")
+
+    return pd.concat(dataframes, ignore_index=True)
+
+
+# Chuyển ViCon thành dữ liệu kiểm thử
+def vectorize_vicon(dataframe: pd.DataFrame, embeddings: dict[str, np.ndarray]):
     features: list[np.ndarray] = []
     labels: list[str] = []
-    valid_rows: list[dict[str, object]] = []
-    oov_rows: list[dict[str, object]] = []
+    valid_rows: list[dict[str, str]] = []
+    oov_rows: list[dict[str, str]] = []
 
     for row in dataframe.itertuples(index=False):
         word1 = normalize_word(str(row.Word1))
@@ -171,10 +220,14 @@ def vectorize_vicon(
         relation = str(row.Relation).strip().upper()
         pos_group = str(row.POS_GROUP).strip().upper()
 
-        if relation not in LABELS:
-            raise ValueError(f"Unsupported relation {relation!r} for ({word1}, {word2}).")
+        missing = []
 
-        missing = [word for word in (word1, word2) if word not in embeddings]
+        if word1 not in embeddings:
+            missing.append(word1)
+
+        if word2 not in embeddings:
+            missing.append(word2)
+
         if missing:
             oov_rows.append({
                 "Word1": word1,
@@ -185,8 +238,14 @@ def vectorize_vicon(
             })
             continue
 
-        features.append(create_pair_features(embeddings[word1], embeddings[word2]))
+        pair_features = create_pair_features(
+            embeddings[word1],
+            embeddings[word2],
+        )
+
+        features.append(pair_features)
         labels.append(relation)
+
         valid_rows.append({
             "Word1": word1,
             "Word2": word2,
@@ -195,73 +254,101 @@ def vectorize_vicon(
         })
 
     if not features:
-        raise ValueError("No ViCon samples could be vectorized.")
-    return np.vstack(features), np.asarray(labels), pd.DataFrame(valid_rows), pd.DataFrame(oov_rows)
+        raise ValueError("Không có cặp từ ViCon hợp lệ để kiểm thử.")
+
+    return (
+        np.vstack(features),
+        np.asarray(labels),
+        pd.DataFrame(valid_rows),
+        pd.DataFrame(oov_rows),
+    )
 
 
-def build_model(model_name: str = "logreg", random_state: int = 42) -> Pipeline:
-    """Build a Logistic Regression or MLP classification pipeline."""
-    model_name = model_name.strip().lower()
-    if model_name == "logreg":
-        classifier = LogisticRegression(
-            max_iter=3000,
-            class_weight="balanced",
-            random_state=random_state,
-        )
-    elif model_name == "mlp":
-        classifier = MLPClassifier(
-            hidden_layer_sizes=(128, 64),
-            activation="relu",
-            max_iter=500,
-            early_stopping=True,
-            random_state=random_state,
-        )
-    else:
-        raise ValueError("model_name must be 'logreg' or 'mlp'.")
-
+# Tạo pipeline Logistic Regression
+def build_model():
     return Pipeline([
-        ("scaler", StandardScaler()),
-        ("classifier", classifier),
+        (
+            "scaler",
+            StandardScaler(),
+        ),
+        (
+            "classifier",
+            LogisticRegression(
+                max_iter=3000,
+                class_weight="balanced",
+                random_state=42,
+            ),
+        ),
     ])
 
 
-def calculate_metrics(true_labels: np.ndarray, predictions: np.ndarray) -> dict[str, float]:
-    metrics = {
-        "accuracy": float(accuracy_score(true_labels, predictions)),
-        "macro_precision": float(precision_score(true_labels, predictions, average="macro", zero_division=0)),
-        "macro_recall": float(recall_score(true_labels, predictions, average="macro", zero_division=0)),
-        "macro_f1": float(f1_score(true_labels, predictions, average="macro", zero_division=0)),
-        "weighted_f1": float(f1_score(true_labels, predictions, average="weighted", zero_division=0)),
+# Tính các chỉ số đánh giá
+def calculate_metrics(true_labels: np.ndarray, predictions: np.ndarray):
+    accuracy = accuracy_score(true_labels, predictions)
+
+    precision = precision_score(
+        true_labels,
+        predictions,
+        labels=LABELS,
+        average="macro",
+        zero_division=0,
+    )
+
+    recall = recall_score(
+        true_labels,
+        predictions,
+        labels=LABELS,
+        average="macro",
+        zero_division=0,
+    )
+
+    f1 = f1_score(
+        true_labels,
+        predictions,
+        labels=LABELS,
+        average="macro",
+        zero_division=0,
+    )
+
+    return {
+        "Accuracy": float(accuracy),
+        "Macro Precision": float(precision),
+        "Macro Recall": float(recall),
+        "Macro F1": float(f1),
     }
 
-    for label in LABELS:
-        binary_true = (true_labels == label).astype(int)
-        binary_pred = (predictions == label).astype(int)
-        key = label.lower()
-        metrics[f"{key}_precision"] = float(precision_score(binary_true, binary_pred, zero_division=0))
-        metrics[f"{key}_recall"] = float(recall_score(binary_true, binary_pred, zero_division=0))
-        metrics[f"{key}_f1"] = float(f1_score(binary_true, binary_pred, zero_division=0))
-    return metrics
 
+# Vẽ và lưu confusion matrix
+def save_confusion_matrix(true_labels: np.ndarray, predictions: np.ndarray, output_path: str | Path):
+    matrix = confusion_matrix(
+        true_labels,
+        predictions,
+        labels=LABELS,
+    )
 
-def save_confusion_matrix(
-    true_labels: np.ndarray,
-    predictions: np.ndarray,
-    output_path: str | Path,
-    title: str,
-) -> None:
-    matrix = confusion_matrix(true_labels, predictions, labels=LABELS)
-    figure, axis = plt.subplots(figsize=(5, 4))
-    image = axis.imshow(matrix)
-    axis.set_xticks(range(len(LABELS)), labels=LABELS)
-    axis.set_yticks(range(len(LABELS)), labels=LABELS)
+    figure, axis = plt.subplots(figsize=(6, 5))
+
+    image = axis.imshow(matrix, cmap="Blues")
+
+    axis.set_title("Synonym-Antonym Classification")
     axis.set_xlabel("Predicted label")
     axis.set_ylabel("True label")
-    axis.set_title(title)
+
+    axis.set_xticks(range(len(LABELS)))
+    axis.set_yticks(range(len(LABELS)))
+
+    axis.set_xticklabels(LABELS)
+    axis.set_yticklabels(LABELS)
 
     for row in range(matrix.shape[0]):
         for column in range(matrix.shape[1]):
-            axis.text(column, row, str(matrix[row, column]), ha="center", va="center")
+            axis.text(
+                column,
+                row,
+                str(matrix[row, column]),
+                ha="center",
+                va="center",
+            )
 
     figure.colorbar(image, ax=axis)
     figure.tight_layout()
@@ -269,113 +356,159 @@ def save_confusion_matrix(
     plt.close(figure)
 
 
-def write_classification_report(
-    true_labels: np.ndarray,
-    predictions: np.ndarray,
-    output_path: str | Path,
-) -> None:
-    text = classification_report(
+# Lưu các chỉ số vào file
+def save_metrics(metrics: dict[str, float], output_path: str | Path, training_samples: int, testing_samples: int):
+    path = Path(output_path)
+
+    with path.open("w", encoding="utf-8") as file:
+        for metric_name, metric_value in metrics.items():
+            file.write(f"{metric_name}: {metric_value:.4f}\n")
+
+        file.write(f"Training samples: {training_samples}\n")
+        file.write(f"Testing samples: {testing_samples}\n")
+
+
+# Lưu classification report
+def save_classification_report(true_labels: np.ndarray, predictions: np.ndarray, output_path: str | Path):
+    report = classification_report(
         true_labels,
         predictions,
         labels=LABELS,
         digits=4,
         zero_division=0,
     )
-    Path(output_path).write_text(text, encoding="utf-8")
+
+    Path(output_path).write_text(report, encoding="utf-8")
 
 
-def run_classification_experiment(
-    embeddings: dict[str, np.ndarray],
-    synonym_path: str | Path,
-    antonym_path: str | Path,
-    vicon_paths: dict[str, str | Path],
-    results_dir: str | Path,
-    model_name: str = "logreg",
-    validation_size: float = 0.2,
-    random_state: int = 42,
-) -> dict[str, object]:
-    output_dir = ensure_directory(results_dir)
+# Huấn luyện trên antonym-synonym set và kiểm thử trên ViCon-400
+def run_classification_experiment(embeddings: dict[str, np.ndarray], synonym_path: str | Path, antonym_path: str | Path, vicon_paths: dict[str, str | Path], results_dir: str | Path):
+    output_dir = Path(results_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    samples = load_labeled_pair_file(synonym_path, "SYN") + load_labeled_pair_file(antonym_path, "ANT")
-    samples = deduplicate_samples(samples)
-    X, y, train_oov = vectorize_samples(samples, embeddings)
-
-    X_train, X_validation, y_train, y_validation = train_test_split(
-        X,
-        y,
-        test_size=validation_size,
-        stratify=y,
-        random_state=random_state,
+    # Đọc dữ liệu huấn luyện
+    synonym_samples = load_labeled_pair_file(
+        synonym_path,
+        "SYN",
     )
 
-    validation_model = build_model(model_name, random_state)
-    validation_model.fit(X_train, y_train)
-    validation_predictions = validation_model.predict(X_validation)
-    validation_metrics = calculate_metrics(y_validation, validation_predictions)
-
-    write_classification_report(
-        y_validation,
-        validation_predictions,
-        output_dir / "validation_classification_report.txt",
-    )
-    save_json(validation_metrics, output_dir / "validation_metrics.json")
-    save_confusion_matrix(
-        y_validation,
-        validation_predictions,
-        output_dir / "validation_confusion_matrix.png",
-        "Validation confusion matrix",
+    antonym_samples = load_labeled_pair_file(
+        antonym_path,
+        "ANT",
     )
 
-    vicon = pd.concat(
-        [load_vicon_file(path, pos) for pos, path in vicon_paths.items()],
-        ignore_index=True,
+    training_samples = synonym_samples + antonym_samples
+
+    # Loại cặp trùng và cặp có nhãn mâu thuẫn
+    training_samples = remove_duplicate_samples(training_samples)
+
+    # Chuyển dữ liệu huấn luyện thành đặc trưng
+    X_train, y_train, training_rows, training_oov = vectorize_training_samples(
+        training_samples,
+        embeddings,
     )
-    X_test, y_test, test_rows, test_oov = vectorize_vicon(vicon, embeddings)
 
-    final_model = build_model(model_name, random_state)
-    final_model.fit(X, y)
-    test_predictions = final_model.predict(X_test)
-    test_metrics = calculate_metrics(y_test, test_predictions)
+    print("Số mẫu huấn luyện hợp lệ:", len(y_train))
+    print("Số mẫu huấn luyện OOV:", len(training_oov))
 
+    # Huấn luyện mô hình
+    model = build_model()
+    model.fit(X_train, y_train)
+
+    # Đọc dữ liệu kiểm thử ViCon
+    vicon_dataframe = load_vicon_dataset(vicon_paths)
+
+    X_test, y_test, test_rows, test_oov = vectorize_vicon(
+        vicon_dataframe,
+        embeddings,
+    )
+
+    print("Số mẫu ViCon hợp lệ:", len(y_test))
+    print("Số mẫu ViCon OOV:", len(test_oov))
+
+    # Dự đoán trên ViCon
+    predictions = model.predict(X_test)
+
+    # Tính các chỉ số
+    metrics = calculate_metrics(
+        y_test,
+        predictions,
+    )
+
+    print("Accuracy:", metrics["Accuracy"])
+    print("Macro Precision:", metrics["Macro Precision"])
+    print("Macro Recall:", metrics["Macro Recall"])
+    print("Macro F1:", metrics["Macro F1"])
+
+    # Lưu kết quả dự đoán
     predictions_output = test_rows.copy()
-    predictions_output["Prediction"] = test_predictions
+    predictions_output["Prediction"] = predictions
     predictions_output["Correct"] = predictions_output["Relation"] == predictions_output["Prediction"]
-    predictions_output.to_csv(output_dir / "vicon_predictions.csv", index=False, encoding="utf-8-sig")
-    train_oov.to_csv(output_dir / "training_oov.csv", index=False, encoding="utf-8-sig")
-    test_oov.to_csv(output_dir / "vicon_oov.csv", index=False, encoding="utf-8-sig")
 
-    write_classification_report(y_test, test_predictions, output_dir / "test_classification_report.txt")
-    save_json(test_metrics, output_dir / "test_metrics.json")
+    predictions_output.to_csv(
+        output_dir / "vicon_predictions.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+    # Lưu các cặp OOV
+    training_oov.to_csv(
+        output_dir / "training_oov.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+    test_oov.to_csv(
+        output_dir / "vicon_oov.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+    # Lưu chỉ số
+    save_metrics(
+        metrics,
+        output_dir / "metrics.txt",
+        len(y_train),
+        len(y_test),
+    )
+
+    # Lưu classification report
+    save_classification_report(
+        y_test,
+        predictions,
+        output_dir / "classification_report.txt",
+    )
+
+    # Vẽ confusion matrix
     save_confusion_matrix(
         y_test,
-        test_predictions,
-        output_dir / "test_confusion_matrix.png",
-        "ViCon test confusion matrix",
+        predictions,
+        output_dir / "confusion_matrix.png",
     )
 
-    per_pos_metrics: dict[str, dict[str, float]] = {}
-    for pos in sorted(predictions_output["POS_GROUP"].unique()):
-        subset = predictions_output[predictions_output["POS_GROUP"] == pos]
-        per_pos_metrics[pos] = calculate_metrics(
-            subset["Relation"].to_numpy(),
-            subset["Prediction"].to_numpy(),
-        )
-    save_json(per_pos_metrics, output_dir / "test_metrics_by_pos.json")
+    print(f"Đã lưu kết quả tại: {output_dir}")
 
-    summary: dict[str, object] = {
-        "model": model_name,
-        "embedding_vocabulary_size": int(len(embeddings)),
-        "training_samples_after_deduplication": int(len(samples)),
-        "training_samples_used": int(len(y)),
-        "training_oov_pairs": int(len(train_oov)),
-        "training_label_distribution": dict(Counter(y)),
-        "validation_samples": int(len(y_validation)),
-        "validation_metrics": validation_metrics,
-        "test_samples_used": int(len(y_test)),
-        "test_oov_pairs": int(len(test_oov)),
-        "test_label_distribution": dict(Counter(y_test)),
-        "test_metrics": test_metrics,
-        "test_metrics_by_pos": per_pos_metrics,
+
+if __name__ == "__main__":
+    word2vec_path = "./data/Word2vec/word2vec.txt"
+
+    synonym_path = "./data/antonym-synonym-set/Synonym_vietnamese.txt"
+    antonym_path = "./data/antonym-synonym-set/Antonym_vietnamese.txt"
+
+    vicon_paths = {
+        "noun": "./data/ViCon-400/400_noun_pairs.txt",
+        "verb": "./data/ViCon-400/400_verb_pairs.txt",
+        "adj": "./data/ViCon-400/600_adj_pairs.txt",
     }
-    save_json(summary, output_dir / "classification_summary.json")
-    return summary
+
+    results_dir = "./results/classifier"
+
+    embeddings = load_embeddings(word2vec_path)
+
+    run_classification_experiment(
+        embeddings,
+        synonym_path,
+        antonym_path,
+        vicon_paths,
+        results_dir,
+    )

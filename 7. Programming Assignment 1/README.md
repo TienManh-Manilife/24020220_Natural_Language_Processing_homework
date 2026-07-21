@@ -4,7 +4,9 @@
 
 **Chú ý:** Vì file word2vec.txt quá lớn nên đang lưu dưới dạng file nén. Trước khi chạy chương trình cần phải giải nén và đặt đúng chỗ cũ (Bên cạnh file zip)  
 [Hãy giải nén](./data/word2vec/)  
-Tải thư viện cần thiết: pip install -r requirements.txt
+Có thể đặt các file dữ liệu ở vị trí khác, nhưng cần đổi path trong các file mã nguồn  
+
+**Tải thư viện cần thiết:** pip install -r requirements.txt
 
 **Nguồn tất cả dữ liệu:** [Word-Similarity](https://github.com/NLP-Projects/Word-Similarity)
 
@@ -15,14 +17,71 @@ Tải thư viện cần thiết: pip install -r requirements.txt
 ## Chạy chương trình: Cần cd đến thư mục của folder này. Sau đó:  
 **Bài 1 - Similarity:** Chạy file similarity.py
 
-    Đọc embeddings → Đọc ViSim → Tính cosine → Lưu kết quả vào results/similarity/
+```text
+Đọc file Word2Vec
+        ↓
+Đọc dữ liệu ViSim-400
+        ↓
+Chuẩn hóa các từ
+        ↓
+Kiểm tra từ có trong embeddings
+        ↓
+Tính cosine similarity cho từng cặp từ
+        ↓
+Lưu kết quả vào results/similarity/
+```
 
 
-**Bài 2 - K-nearest words:** Chạy hàm run_nearest_word_search trong main.py  
+**Bài 2 - K-nearest words:** Chạy file nearest_words.py 
 
-    Nhận từ (gọi là w) → lấy vector của w → tính cosine với các từ còn lại → sắp xếp giảm dần → lấy k từ đầu tiên
+```text
+Đọc file Word2Vec
+        ↓
+Nhập từ truy vấn w
+        ↓
+Chuẩn hóa từ
+        ↓
+Kiểm tra từ có trong embeddings
+        ↓
+Tính cosine similarity với toàn bộ các từ còn lại
+        ↓
+Sắp xếp theo cosine giảm dần
+        ↓
+Lấy k từ có cosine lớn nhất
+        ↓
+In kết quả ra màn hình
+```
 
-**Chạy Phần 3 của bài tập:**   
+
+**Bài 3 - Synonym-antonym classification:** Chạy file classifier.py   
+
+```text
+Đọc file Word2Vec
+        ↓
+Đọc tập dữ liệu antonym-synonym set
+        ↓
+Gán nhãn SYN và ANT
+        ↓
+Chuẩn hóa các từ
+        ↓
+Loại các cặp từ trùng lặp hoặc có nhãn mâu thuẫn
+        ↓
+Kiểm tra từ có trong embeddings
+        ↓
+Tạo vector đặc trưng cho từng cặp từ
+        ↓
+Huấn luyện Logistic Regression
+        ↓
+Đọc bộ dữ liệu ViCon-400
+        ↓
+Tạo vector đặc trưng cho ViCon-400
+        ↓
+Dự đoán SYN hoặc ANT
+        ↓
+Tính Accuracy, Precision, Recall và F1
+        ↓
+Lưu kết quả vào results/classifier/
+```
 
 
 **Kết quả từng phần:** [Kết quả](./results/)
