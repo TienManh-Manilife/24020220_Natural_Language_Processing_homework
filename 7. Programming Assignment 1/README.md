@@ -49,7 +49,7 @@ Sắp xếp theo cosine giảm dần
         ↓
 Lấy k từ có cosine lớn nhất
         ↓
-In kết quả ra màn hình
+In kết quả ra màn hình và lưu kết quả vào results/nearest/
 ```
 
 

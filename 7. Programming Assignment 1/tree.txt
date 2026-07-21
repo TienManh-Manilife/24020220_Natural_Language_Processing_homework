@@ -13,6 +13,7 @@ Programming Assignment 1:  WORD SIMILARITY AND SYNONYM-ANTONYM CLASSIFICATION/
 │       └── Synonym_vietnamese.txt  
 ├── results/  
 │   ├── classification/ 
+│   ├── nearest/
 │   └── similarity/ 
 ├── topic/  
 │   └── Programming Assignment 1-2026.pdf  

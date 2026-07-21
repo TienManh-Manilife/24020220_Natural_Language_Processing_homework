@@ -57,11 +57,7 @@ if __name__ == "__main__":
     word2vec_path = "./data/Word2vec/word2vec.txt"
     embeddings = load_embeddings(word2vec_path)
 
-    visim_path = "./data/ViSim-400/ViSim-400.txt"
+    visim_path = "./data/ViSim-400/Visim-400.txt"
     results_similarity_dir = "./results/similarity"
 
-    run_similarity_experiment(
-        embeddings,
-        visim_path,
-        results_similarity_dir,
-    )
+    run_similarity_experiment(embeddings, visim_path, results_similarity_dir)

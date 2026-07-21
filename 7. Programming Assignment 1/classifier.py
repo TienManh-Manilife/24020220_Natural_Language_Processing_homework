@@ -120,37 +120,21 @@ def vectorize_training_samples(samples: Iterable[tuple[str, str, str]], embeddin
             missing.append(word2)
 
         if missing:
-            oov_rows.append({
-                "Word1": word1,
-                "Word2": word2,
-                "Relation": label,
-                "Missing": ",".join(missing),
-            })
+            oov_rows.append({"Word1": word1, "Word2": word2, "Relation": label, "Missing": ",".join(missing)})
             continue
 
-        pair_features = create_pair_features(
-            embeddings[word1],
-            embeddings[word2],
+        pair_features = create_pair_features(embeddings[word1], embeddings[word2],
         )
 
         features.append(pair_features)
         labels.append(label)
 
-        valid_rows.append({
-            "Word1": word1,
-            "Word2": word2,
-            "Relation": label,
-        })
+        valid_rows.append({"Word1": word1, "Word2": word2, "Relation": label})
 
     if not features:
         raise ValueError("Không có cặp từ huấn luyện hợp lệ.")
 
-    return (
-        np.vstack(features),
-        np.asarray(labels),
-        pd.DataFrame(valid_rows),
-        pd.DataFrame(oov_rows),
-    )
+    return (np.vstack(features), np.asarray(labels), pd.DataFrame(valid_rows), pd.DataFrame(oov_rows))
 
 
 # Đọc một file ViCon-400
@@ -238,10 +222,7 @@ def vectorize_vicon(dataframe: pd.DataFrame, embeddings: dict[str, np.ndarray]):
             })
             continue
 
-        pair_features = create_pair_features(
-            embeddings[word1],
-            embeddings[word2],
-        )
+        pair_features = create_pair_features(embeddings[word1], embeddings[word2])
 
         features.append(pair_features)
         labels.append(relation)

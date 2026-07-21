@@ -1,0 +1,56 @@
+Xét chữ: đánh
+phang: 0.586550
+tấn_công: 0.564789
+đánh_mạnh: 0.552105
+đánh_úp: 0.547679
+bắn: 0.547630
+
+Xét chữ: nện
+nadal: 0.506227
+wimbledon: 0.501787
+federer: 0.487628
+rogers_cup: 0.477780
+roger_federer: 0.476703
+
+Xét chữ: phang
+đánh_liên_tiếp: 0.703002
+đập_liên_tiếp: 0.662252
+chém: 0.639713
+đập_thẳng: 0.628324
+đấm: 0.620921
+
+Xét chữ: tấn_công
+tiến_công: 0.711860
+tấn_công_dữ_dội: 0.663472
+oanh_kích: 0.628253
+tấn_công_liên_tiếp: 0.620841
+phản_công: 0.620372
+
+Xét chữ: giương
+giơ: 0.665142
+vút: 0.606773
+ngẩng: 0.558554
+1m7: 0.518657
+1m55: 0.503355
+
+Xét chữ: êm_đềm
+yên_bình: 0.667755
+yên_ả: 0.647134
+êm_ả: 0.643595
+bình_lặng: 0.615216
+phẳng_lặng: 0.613148
+
+Xét chữ: đỉnh_đầu
+trán: 0.670612
+xương_gò_má: 0.608697
+sống_mũi: 0.608309
+gò_má: 0.590264
+hàm_dưới: 0.589294
+
+Xét chữ: thuốc_độc
+thuốc_ngủ: 0.511325
+thuốc_gây_mê: 0.487373
+độc_dược: 0.479549
+thuốc_tẩy: 0.459289
+thuốc_tiêm: 0.457880
+
