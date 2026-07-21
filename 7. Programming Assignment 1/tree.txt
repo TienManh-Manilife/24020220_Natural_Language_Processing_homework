@@ -1,0 +1,29 @@
+Programming Assignment 1:  WORD SIMILARITY AND SYNONYM-ANTONYM CLASSIFICATION/  
+├── data/  
+│   ├── word2vec/  
+│   │   └── word2vec.txt  
+│   ├── ViSim-400/  
+│   │   └── Visim-400.txt  
+│   ├── ViCon-400/  
+│   │   ├── 400_noun_pairs.txt  
+│   │   ├── 400_verb_pairs.txt  
+│   │   └── 600_adj_pairs.txt  
+│   └── train/
+│       ├── Antonym_vietnamese.txt  
+│       └── Synonym_vietnamese.txt  
+├── results/  
+│   ├── visim_predictions.csv  
+│   ├── nearest_words.txt  
+│   ├── classification_report.txt  
+│   └── confusion_matrix.png  
+├── src/  
+│   ├── embeddings.py  
+│   ├── similarity.py  
+│   ├── nearest_words.py  
+│   ├── classifier.py  
+│   └── utils.py  
+├── topic/  
+│   └── Programming Assignment 1-2026.pdf  
+├── main.py  
+├── requirements.txt  
+└── README.md  
