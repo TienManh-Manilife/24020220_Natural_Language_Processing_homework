@@ -1,7 +1,11 @@
 # Programming Assignment 1:  WORD SIMILARITY AND SYNONYM-ANTONYM CLASSIFICATION
     Sinh viên: Nguyễn Tiến Mạnh
     MSSV: 24020220
+
 **Nguồn dữ liệu:** [Word-Similarity](https://github.com/NLP-Projects/Word-Similarity)
+
+**Chú ý:** Vì file word2vec.txt quá lớn nên đã lưu dưới dạng file nén. Trước khi chạy chương trình cần phải giải nén và đặt đúng chỗ cũ. 
+[Hãy giải nén](./data/word2vec/)
 
 **Đề bài:** [File PDF](./topic/Programming%20Assignment%201-2026.pdf)
 
