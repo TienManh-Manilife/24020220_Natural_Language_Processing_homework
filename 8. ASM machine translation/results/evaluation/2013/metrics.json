@@ -1,0 +1,56 @@
+{
+  "models": {
+    "TensorFlow NMT": {
+      "sentences": 1268,
+      "bleu_cased": 20.398353284156304,
+      "bleu_uncased": 21.024404306870537,
+      "chrfpp_cased": 38.549504923533206,
+      "chrfpp_uncased": 39.10792887681167,
+      "mean_sentence_chrfpp_uncased": 40.699444319412265,
+      "token_edit_rate_percent": 66.55108106533015,
+      "raw_exact_match_percent": 0.5520504731861199,
+      "normalized_exact_match_percent": 0.5520504731861199,
+      "average_reference_tokens": 27.06466876971609,
+      "average_hypothesis_tokens": 25.498422712933753,
+      "length_ratio": 0.9421294947257999,
+      "empty_outputs": 0
+    },
+    "PyTorch Transformer": {
+      "sentences": 1268,
+      "bleu_cased": 24.780070287597482,
+      "bleu_uncased": 27.85676906468354,
+      "chrfpp_cased": 44.07443108724069,
+      "chrfpp_uncased": 46.35443068262049,
+      "mean_sentence_chrfpp_uncased": 48.19060293344271,
+      "token_edit_rate_percent": 58.622297336674634,
+      "raw_exact_match_percent": 0.0,
+      "normalized_exact_match_percent": 0.0,
+      "average_reference_tokens": 27.06466876971609,
+      "average_hypothesis_tokens": 25.902996845425868,
+      "length_ratio": 0.9570779182936069,
+      "empty_outputs": 0
+    }
+  },
+  "comparison": {
+    "primary_metric": "chrF++ uncased",
+    "winner_statement": "PyTorch Transformer tốt hơn TensorFlow NMT theo chrF++ không phân biệt hoa/thường.",
+    "sentence_level_chrfpp": {
+      "TensorFlow NMT_wins": 290,
+      "PyTorch Transformer_wins": 953,
+      "ties": 25,
+      "mean_difference_TensorFlow NMT_minus_PyTorch Transformer": -7.491158614030396,
+      "bootstrap_95_percent_ci": [
+        -8.174126897769687,
+        -6.859599870660823
+      ],
+      "bootstrap_samples": 1000,
+      "seed": 42
+    }
+  },
+  "metric_notes": {
+    "BLEU": "Higher is better; corpus 1-4 gram precision with brevity penalty.",
+    "chrF++": "Higher is better; character 1-6 grams and word 1-2 grams, beta=2.",
+    "token_edit_rate_percent": "Lower is better; Levenshtein edits divided by reference tokens.",
+    "length_ratio": "Closer to 1 is generally preferable; not a quality metric by itself."
+  }
+}

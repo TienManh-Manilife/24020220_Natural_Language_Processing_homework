@@ -1,0 +1,6 @@
+model_checkpoint_path: "/workspace/models/nmt_en_vi/translate.ckpt-12000"
+all_model_checkpoint_paths: "/workspace/models/nmt_en_vi/translate.ckpt-8000"
+all_model_checkpoint_paths: "/workspace/models/nmt_en_vi/translate.ckpt-9000"
+all_model_checkpoint_paths: "/workspace/models/nmt_en_vi/translate.ckpt-10000"
+all_model_checkpoint_paths: "/workspace/models/nmt_en_vi/translate.ckpt-11000"
+all_model_checkpoint_paths: "/workspace/models/nmt_en_vi/translate.ckpt-12000"
