@@ -8,10 +8,10 @@ Mô hình transformer ở thư mục results/models/transformer/ không up lên 
 
 Bài tập xây dựng, chạy suy luận và đánh giá hai hệ thống dịch máy từ tiếng Anh sang tiếng Việt trên bộ dữ liệu IWSLT15:
 
-1. **PyTorch Transformer**: mô hình Transformer encoder–decoder được chạy từ notebook `demo_transformer.ipynb`.
-2. **TensorFlow NMT**: mô hình sequence-to-sequence dùng RNN và cơ chế attention từ repository `tensorflow/nmt`.
+1. **PyTorch Transformer**
+2. **TensorFlow NMT**
 
-Hai mô hình được đánh giá trên cùng tập `tst2012`. Mỗi dòng trong file đầu ra tương ứng chính xác với cùng dòng trong file dịch chuẩn tiếng Việt.
+Hai mô hình được đánh giá trên cùng tập `tst2012` và `tst2013`. Mỗi dòng trong file đầu ra tương ứng chính xác với cùng dòng trong file dịch chuẩn tiếng Việt.
 
 Mục tiêu chính là:
 
@@ -24,11 +24,10 @@ Mục tiêu chính là:
 
 Các file IWSLT15 được sử dụng theo cách sau:
 
-| Mục đích   | Tiếng Anh    | Tiếng Việt   |
-| ---------- | ------------ | ------------ |
-| Huấn luyện | `train.en`   | `train.vi`   |
-| Test       | `tst2012.en` | `tst2012.vi` |
-| Test       | `tst2013.en` | `tst2013.vi` |
+| Mục đích   | Tiếng Anh                  | Tiếng Việt                 |
+| ---------- | -------------------------- | -------------------------- |
+| Huấn luyện | `train.en`                 | `train.vi`                 |
+| Test       | `tst2012.en`, `tst2013.en` | `tst2012.vi`, `tst2013.vi` |
 
 ## 3. Cấu trúc thư mục
 
@@ -39,9 +38,9 @@ Các file IWSLT15 được sử dụng theo cách sau:
 ├── data/
 │   └── tst2012.vi
 └── results/
-    ├── translation/
-    │   ├── tensorflow_tst2012.vi
-    │   └── transformer_tst2012.vi
+    ├── models/
+    │   ├── tensorflowtensorflow/
+    │   └── transformer/
     ├── evaluation/
     │   ├── 2012/
     │   └── 2013/
