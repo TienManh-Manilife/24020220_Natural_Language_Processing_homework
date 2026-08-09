@@ -51,6 +51,8 @@ Các file IWSLT15 được sử dụng theo cách sau:
         └── transformer_tst2013.vi
 ```
 
+[\_\_\_]("/results/models/transformer)
+
 Trong cấu trúc làm việc Docker của bài tập, thư mục tương đương là:
 
 ```text
